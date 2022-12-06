@@ -98,43 +98,43 @@ public final class Formatter {
         if (color != null) this.color.putAll(color);
         DateTimeFormatter dateTimeFormatter = BY_NAME.get(time);
         this.dateTimeFormatter = dateTimeFormatter == null ? DateTimeFormatter.ofPattern(time) : dateTimeFormatter;
-        int index = formatString.indexOf('%');
-        if (index == -1) { // No variables, but why are you using a logging framework?
-            this.strings = null;
-            this.components = null;
-            return;
-        }
-        int next = formatString.indexOf('%', index + 1);
-        int nameLen = next - index; // Calculated length contains a % char
-        if (nameLen <= 3 || nameLen > 14 || identifyVariable(formatString.substring(index + 1, next)) == TYPE_STRING) { // No variables
+        int index = formatString.indexOf('%'), next = formatString.indexOf('%', index + 1), prev = 0;
+        if (index < 0 || next < 0) { // No variables, but why are you using a logging framework?
             this.strings = null;
             this.components = null;
             return;
         }
         ObjectArrayList<String> strings = new ObjectArrayList<>();
         ByteArrayList components = new ByteArrayList(32);
-        if (index > 0) {
+        do {
             components.add(TYPE_STRING);
-            strings.add(formatString.substring(0, index));
-        }
-        components.add(identifyVariable(formatString.substring(index + 1, next)));
-        index = formatString.indexOf('%', next + 1);
-        for (int prev = next; index != -1; index = formatString.indexOf('%', next + 1), prev = next) {
-            next = formatString.indexOf('%', index + 1);
-            components.add(TYPE_STRING);
-            int j = next - index;
-            if (j > 3 && j <= 14) { // May contain a variable("msg".length() == 3, "source_method".length() == 13)
-                strings.add(formatString.substring(prev + 1, index));
-                components.add(identifyVariable(formatString.substring(index + 1, next)));
-            } else if (next == -1) {
-                strings.add(formatString.substring(prev + 1));
+            int nameLen = next - index; // Calculated length contains a % char
+            if (next == -1) {
+                strings.add(formatString.substring(prev));
                 this.components = components.toByteArray();
                 this.strings = strings.toArray(new String[0]);
                 return;
-            } else strings.add(formatString.substring(prev + 1, next + 1));
+            } else if (nameLen > 3 && nameLen <= 14) { // May contain a variable("msg".length() == 3, "source_method".length() == 13)
+                byte type = identifyVariable(formatString.substring(index + 1, next));
+                if (type == TYPE_STRING) {
+                    strings.add(formatString.substring(prev, next));
+                    index = next;
+                    prev = next;
+                    next = formatString.indexOf('%', index + 1);
+                    continue;
+                } else {
+                    strings.add(formatString.substring(prev, index));
+                    components.add(type);
+                }
+            } else strings.add(formatString.substring(prev, next + 1));
+            index = formatString.indexOf('%', next + 1);
+            prev = next + 1;
+            next = formatString.indexOf('%', index + 1);
+        } while(index != -1);
+        if (prev < formatString.length()) {
+            components.add(TYPE_STRING);
+            strings.add(formatString.substring(prev));
         }
-        components.add(TYPE_STRING);
-        strings.add(formatString.substring(next + 1));
         this.components = components.toByteArray();
         this.strings = strings.toArray(new String[0]);
     }
