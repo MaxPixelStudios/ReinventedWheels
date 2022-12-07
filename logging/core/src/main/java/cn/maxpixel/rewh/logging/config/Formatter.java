@@ -51,8 +51,6 @@ public final class Formatter {
      */
     private static final byte TYPE_SOURCE_METHOD = 7;
     private static final byte TYPE_STRING = 8;
-    public static final Formatter DEFAULT = new Formatter("[%time%] [%source_class%/%source_method%] [%name%] [%level%] %msg%\n");
-
     private static final Object2ObjectOpenHashMap<String, DateTimeFormatter> BY_NAME = new Object2ObjectOpenHashMap<>();
     static {
         for (Field field : DateTimeFormatter.class.getFields()) {
@@ -63,6 +61,7 @@ public final class Formatter {
             }
         }
     }
+    public static final Formatter DEFAULT = new Formatter("[%time%] [%source_class%/%source_method%] [%name%] [%level%] %msg%\n");
 
     private final Map<Level, Color> color = new Object2ObjectOpenHashMap<>();
     {
@@ -106,6 +105,7 @@ public final class Formatter {
         }
         ObjectArrayList<String> strings = new ObjectArrayList<>();
         ByteArrayList components = new ByteArrayList(32);
+        // %1%msg%
         do {
             components.add(TYPE_STRING);
             int nameLen = next - index; // Calculated length contains a % char
@@ -118,17 +118,19 @@ public final class Formatter {
                 byte type = identifyVariable(formatString.substring(index + 1, next));
                 if (type == TYPE_STRING) {
                     strings.add(formatString.substring(prev, next));
-                    index = next;
-                    prev = next;
+                } else {
+                    strings.add(prev == index ? "" : formatString.substring(prev, index));
+                    components.add(type);
+                    index = formatString.indexOf('%', next + 1);
+                    prev = next + 1;
                     next = formatString.indexOf('%', index + 1);
                     continue;
-                } else {
-                    strings.add(formatString.substring(prev, index));
-                    components.add(type);
                 }
-            } else strings.add(formatString.substring(prev, next + 1));
-            index = formatString.indexOf('%', next + 1);
-            prev = next + 1;
+            } else {
+                strings.add(formatString.substring(prev, next));
+            }
+            index = next;
+            prev = next;
             next = formatString.indexOf('%', index + 1);
         } while(index != -1);
         if (prev < formatString.length()) {
