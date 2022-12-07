@@ -25,6 +25,11 @@ public class FormatterBenchmark {
         return new SplitFormatter(formatString);
     }
 
+    @Benchmark
+    public AbstractFormatter benchmarkSplit2() {
+        return new Split2Formatter(formatString);
+    }
+
     public abstract static class AbstractFormatter {
         static final byte TYPE_MSG = 1;
         static final byte TYPE_LEVEL = 2;
@@ -146,6 +151,44 @@ public class FormatterBenchmark {
                     for (int k = lastMatch; k < parts.length; k++)
                         joiner.add(parts[k]);
                     strings.add(joiner.toString());
+                }
+            }
+        }
+    }
+
+    public static class Split2Formatter extends AbstractFormatter {
+        public Split2Formatter(String format) {
+            super(format);
+        }
+
+        @Override
+        public void parse(String format, ObjectArrayList<String> strings, ByteArrayList components) {
+            String[] parts = format.split("%");
+            int lastMatch = 0;
+            for (int i = 0; i < parts.length; i++) {
+                String part = parts[i];
+                byte type = identifyVariable(part);
+                if (type != TYPE_STRING) {
+                    for (int k = lastMatch; k < i; k++) {
+                        components.add(TYPE_STRING);
+                        strings.add(parts[k]);
+                        if (k != i - 1) {
+                            components.add(TYPE_STRING);
+                            strings.add("%");
+                        }
+                    }
+                    components.add(type);
+                    lastMatch = i + 1;
+                }
+            }
+            if (lastMatch < parts.length) {
+                for (int k = lastMatch; k < parts.length; k++) {
+                    components.add(TYPE_STRING);
+                    strings.add(parts[k]);
+                    if (k != parts.length - 1) {
+                        components.add(TYPE_STRING);
+                        strings.add("%");
+                    }
                 }
             }
         }
