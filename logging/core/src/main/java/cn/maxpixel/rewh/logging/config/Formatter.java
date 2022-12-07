@@ -105,7 +105,6 @@ public final class Formatter {
         }
         ObjectArrayList<String> strings = new ObjectArrayList<>();
         ByteArrayList components = new ByteArrayList(32);
-        // %1%msg%
         do {
             components.add(TYPE_STRING);
             int nameLen = next - index; // Calculated length contains a % char
