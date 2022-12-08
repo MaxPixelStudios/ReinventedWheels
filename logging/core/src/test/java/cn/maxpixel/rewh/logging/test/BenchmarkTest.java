@@ -1,7 +1,6 @@
 package cn.maxpixel.rewh.logging.test;
 
 import cn.maxpixel.rewh.logging.test.benchmark.FormatterBenchmark;
-import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
@@ -14,6 +13,6 @@ public class BenchmarkTest {
                 .measurementIterations(5)
                 .forks(1)
                 .build();
-        new Runner(options).run();
+//        new Runner(options).run();
     }
 }

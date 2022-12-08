@@ -1,10 +1,10 @@
 package cn.maxpixel.rewh.logging.msg;
 
+import cn.maxpixel.rewh.logging.Config;
 import cn.maxpixel.rewh.logging.Level;
 import cn.maxpixel.rewh.logging.Marker;
-import cn.maxpixel.rewh.logging.config.LoggerConfig;
 
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Iterator;
 
 public interface Message {
@@ -14,7 +14,7 @@ public interface Message {
 
     Level getLevel();
 
-    Instant getInstant();
+    ZonedDateTime getTimestamp();
 
     String getMessage();
 
@@ -26,14 +26,15 @@ public interface Message {
 
     Throwable getThrowable();
 
-    String makeFormattedMessage(LoggerConfig config);
+    String makeFormattedMessage(Config.Logger config);
 
     static String replaceParams(String msg, Object[] params, int paramCount) {
         if (!msg.contains("{}") || paramCount <= 0) return msg;
         if (msg.equals("{}")) return params[0].toString();
         if (msg.equals("\\{}")) return "{}";
         StringBuilder sb = new StringBuilder();
-        for (int pointer = msg.indexOf("{}"), paramIndex = 0, previousPointer = 0;
+        int previousPointer = 0;
+        for (int pointer = msg.indexOf("{}"), paramIndex = 0;
              pointer < msg.length() && pointer != -1;
              pointer = msg.indexOf("{}", previousPointer)) {
             if (paramIndex == paramCount) return sb.append(msg, previousPointer, msg.length()).toString();
@@ -47,6 +48,7 @@ public interface Message {
             }
             previousPointer = pointer + 2;
         }
+        sb.append(msg, previousPointer, msg.length());
         return sb.toString();
     }
 }

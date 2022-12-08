@@ -1,4 +1,4 @@
-package cn.maxpixel.rewh.logging;
+package cn.maxpixel.rewh.logging.util;
 
 public interface Reusable {
     void ready();

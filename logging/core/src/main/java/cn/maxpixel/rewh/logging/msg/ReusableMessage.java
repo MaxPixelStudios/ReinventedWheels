@@ -1,14 +1,13 @@
-package cn.maxpixel.rewh.logging.reuse;
+package cn.maxpixel.rewh.logging.msg;
 
+import cn.maxpixel.rewh.logging.Config;
 import cn.maxpixel.rewh.logging.Level;
 import cn.maxpixel.rewh.logging.Marker;
-import cn.maxpixel.rewh.logging.Reusable;
-import cn.maxpixel.rewh.logging.config.LoggerConfig;
-import cn.maxpixel.rewh.logging.msg.Message;
+import cn.maxpixel.rewh.logging.util.Reusable;
 import it.unimi.dsi.fastutil.objects.ObjectIterators;
 
 import java.text.MessageFormat;
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -16,7 +15,7 @@ public class ReusableMessage implements Message, Reusable {
     private volatile Marker marker;
     private volatile StackTraceElement caller;
     private volatile Level level;
-    private volatile Instant instant;
+    private volatile ZonedDateTime timestamp;
     private volatile String message;
     private final Object[] args = new Object[5];
     private volatile int argLength;
@@ -42,8 +41,8 @@ public class ReusableMessage implements Message, Reusable {
     }
 
     @Override
-    public Instant getInstant() {
-        return instant;
+    public ZonedDateTime getTimestamp() {
+        return timestamp;
     }
 
     @Override
@@ -76,7 +75,7 @@ public class ReusableMessage implements Message, Reusable {
     }
 
     @Override
-    public String makeFormattedMessage(LoggerConfig config) {
+    public String makeFormattedMessage(Config.Logger config) {
         if (formatted == null) {
             if (argLength > 0) {
                 String replaced = Message.replaceParams(message, arguments == null ? args : arguments, argLength);
@@ -95,16 +94,17 @@ public class ReusableMessage implements Message, Reusable {
     public void ready() {
         this.argLength = -1;
         this.arguments = null;
+        this.formatted = null;
         this.ready = true;
     }
 
-    ReusableMessage init(Marker marker, StackTraceElement caller, Level level, Instant instant, String message) {
+    ReusableMessage init(Marker marker, StackTraceElement caller, Level level, ZonedDateTime timestamp, String message) {
         if (!ready) throw new IllegalStateException("Message is not ready");
         this.ready = false;
         this.marker = marker;
         this.caller = caller;
         this.level = level;
-        this.instant = instant;
+        this.timestamp = timestamp;
         this.message = message;
         return this;
     }

@@ -1,17 +1,16 @@
 package cn.maxpixel.rewh.logging;
 
-import cn.maxpixel.rewh.logging.config.Config;
-import cn.maxpixel.rewh.logging.config.LoggerConfig;
 import cn.maxpixel.rewh.logging.msg.Message;
 import cn.maxpixel.rewh.logging.msg.MessageFactory;
 import cn.maxpixel.rewh.logging.msg.filter.Filter;
 import cn.maxpixel.rewh.logging.msg.publisher.MessagePublisher;
 import cn.maxpixel.rewh.logging.util.CallerFinder;
+import cn.maxpixel.rewh.logging.util.Reusable;
 import org.fusesource.jansi.Ansi;
 
 import java.io.IOException;
 import java.time.Clock;
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
@@ -20,7 +19,7 @@ public final class Logger {
     private static final String FQCN = Logger.class.getTypeName();
     private static final Clock CLOCK = Clock.systemDefaultZone();
     public final String name;
-    private LoggerConfig config;
+    private Config.Logger config;
     private MessagePublisher[] publishers;
 
     Logger(String name) {
@@ -30,7 +29,7 @@ public final class Logger {
 
     void reload() {
         this.config = Config.getConfig(name);// TODO: hierarchy
-        this.publishers = Config.getPublishers();
+        this.publishers = Config.get().publishers;
     }
 
     private StackTraceElement fetchCaller() {
@@ -47,12 +46,12 @@ public final class Logger {
         try {
             if (!isLoggable(message.getLevel())) return;
             for (Filter filter : config.filters) if (!filter.isLoggable(message)) return;
-            String formatted = config.formatter.format(message.getInstant(), message.getCaller(), name, message.getMarker(),
+            String formatted = config.formatter.format(message.getTimestamp(), message.getCaller(), name, message.getMarker(),
                     message.getLevel(), message.makeFormattedMessage(config));
             UnaryOperator<Ansi> colorApplicator = config.formatter.getColorApplicator(message.getLevel());
             for (MessagePublisher publisher : publishers)
                 if (publisher.isLoggable(this, config, message))
-                    publisher.publish(formatted, colorApplicator);
+                    publisher.publish(formatted, message.getThrowable(), colorApplicator);
         } catch (IOException e) {
             System.err.println("Failed to log the message");
             e.printStackTrace();
@@ -62,67 +61,67 @@ public final class Logger {
     }
 
     public void log(Level level, String msg) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, Instant.now(CLOCK), msg));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg));
     }
 
     public void log(Level level, String msg, Object arg0) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, Instant.now(CLOCK), msg, arg0));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0));
     }
 
     public void log(Level level, String msg, Object arg0, Object arg1) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, Instant.now(CLOCK), msg, arg0, arg1));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1));
     }
 
     public void log(Level level, String msg, Object arg0, Object arg1, Object arg2) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, Instant.now(CLOCK), msg, arg0, arg1, arg2));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2));
     }
 
     public void log(Level level, String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, Instant.now(CLOCK), msg, arg0, arg1, arg2, arg3));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2, arg3));
     }
 
     public void log(Level level, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, Instant.now(CLOCK), msg, arg0, arg1, arg2, arg3, arg4));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2, arg3, arg4));
     }
 
     public void log(Level level, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, Instant.now(CLOCK), msg, arg0, arg1, arg2, arg3, arg4, arg5));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2, arg3, arg4, arg5));
     }
 
     public void log(Level level, String msg, Object... args) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, Instant.now(CLOCK), msg, args));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, args));
     }
 
     public void log(Marker marker, Level level, String msg) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, Instant.now(CLOCK), msg));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg));
     }
 
     public void log(Marker marker, Level level, String msg, Object arg0) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, Instant.now(CLOCK), msg, arg0));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0));
     }
 
     public void log(Marker marker, Level level, String msg, Object arg0, Object arg1) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, Instant.now(CLOCK), msg, arg0, arg1));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1));
     }
 
     public void log(Marker marker, Level level, String msg, Object arg0, Object arg1, Object arg2) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, Instant.now(CLOCK), msg, arg0, arg1, arg2));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2));
     }
 
     public void log(Marker marker, Level level, String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, Instant.now(CLOCK), msg, arg0, arg1, arg2, arg3));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2, arg3));
     }
 
     public void log(Marker marker, Level level, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, Instant.now(CLOCK), msg, arg0, arg1, arg2, arg3, arg4));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2, arg3, arg4));
     }
 
     public void log(Marker marker, Level level, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, Instant.now(CLOCK), msg, arg0, arg1, arg2, arg3, arg4, arg5));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2, arg3, arg4, arg5));
     }
 
     public void log(Marker marker, Level level, String msg, Object... args) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, Instant.now(CLOCK), msg, args));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, args));
     }
 
     // Convenience methods
@@ -132,67 +131,67 @@ public final class Logger {
     }
 
     public void trace(String msg) {
-        log(Level.FATAL, msg);
+        log(Level.TRACE, msg);
     }
 
     public void trace(String msg, Object arg0) {
-        log(Level.FATAL, msg, arg0);
+        log(Level.TRACE, msg, arg0);
     }
 
     public void trace(String msg, Object arg0, Object arg1) {
-        log(Level.FATAL, msg, arg0, arg1);
+        log(Level.TRACE, msg, arg0, arg1);
     }
 
     public void trace(String msg, Object arg0, Object arg1, Object arg2) {
-        log(Level.FATAL, msg, arg0, arg1, arg2);
+        log(Level.TRACE, msg, arg0, arg1, arg2);
     }
 
     public void trace(String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3);
+        log(Level.TRACE, msg, arg0, arg1, arg2, arg3);
     }
 
     public void trace(String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4);
+        log(Level.TRACE, msg, arg0, arg1, arg2, arg3, arg4);
     }
 
     public void trace(String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4, arg5);
+        log(Level.TRACE, msg, arg0, arg1, arg2, arg3, arg4, arg5);
     }
 
     public void trace(String msg, Object... args) {
-        log(Level.FATAL, msg, args);
+        log(Level.TRACE, msg, args);
     }
 
     public void trace(Marker marker, String msg) {
-        log(marker, Level.FATAL, msg);
+        log(marker, Level.TRACE, msg);
     }
 
     public void trace(Marker marker, String msg, Object arg0) {
-        log(marker, Level.FATAL, msg, arg0);
+        log(marker, Level.TRACE, msg, arg0);
     }
 
     public void trace(Marker marker, String msg, Object arg0, Object arg1) {
-        log(marker, Level.FATAL, msg, arg0, arg1);
+        log(marker, Level.TRACE, msg, arg0, arg1);
     }
 
     public void trace(Marker marker, String msg, Object arg0, Object arg1, Object arg2) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2);
+        log(marker, Level.TRACE, msg, arg0, arg1, arg2);
     }
 
     public void trace(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3);
+        log(marker, Level.TRACE, msg, arg0, arg1, arg2, arg3);
     }
 
     public void trace(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4);
+        log(marker, Level.TRACE, msg, arg0, arg1, arg2, arg3, arg4);
     }
 
     public void trace(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4, arg5);
+        log(marker, Level.TRACE, msg, arg0, arg1, arg2, arg3, arg4, arg5);
     }
 
     public void trace(Marker marker, String msg, Object... args) {
-        log(marker, Level.FATAL, msg, args);
+        log(marker, Level.TRACE, msg, args);
     }
 
     public boolean isDebugLoggable() {
@@ -200,67 +199,67 @@ public final class Logger {
     }
 
     public void debug(String msg) {
-        log(Level.FATAL, msg);
+        log(Level.DEBUG, msg);
     }
 
     public void debug(String msg, Object arg0) {
-        log(Level.FATAL, msg, arg0);
+        log(Level.DEBUG, msg, arg0);
     }
 
     public void debug(String msg, Object arg0, Object arg1) {
-        log(Level.FATAL, msg, arg0, arg1);
+        log(Level.DEBUG, msg, arg0, arg1);
     }
 
     public void debug(String msg, Object arg0, Object arg1, Object arg2) {
-        log(Level.FATAL, msg, arg0, arg1, arg2);
+        log(Level.DEBUG, msg, arg0, arg1, arg2);
     }
 
     public void debug(String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3);
+        log(Level.DEBUG, msg, arg0, arg1, arg2, arg3);
     }
 
     public void debug(String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4);
+        log(Level.DEBUG, msg, arg0, arg1, arg2, arg3, arg4);
     }
 
     public void debug(String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4, arg5);
+        log(Level.DEBUG, msg, arg0, arg1, arg2, arg3, arg4, arg5);
     }
 
     public void debug(String msg, Object... args) {
-        log(Level.FATAL, msg, args);
+        log(Level.DEBUG, msg, args);
     }
 
     public void debug(Marker marker, String msg) {
-        log(marker, Level.FATAL, msg);
+        log(marker, Level.DEBUG, msg);
     }
 
     public void debug(Marker marker, String msg, Object arg0) {
-        log(marker, Level.FATAL, msg, arg0);
+        log(marker, Level.DEBUG, msg, arg0);
     }
 
     public void debug(Marker marker, String msg, Object arg0, Object arg1) {
-        log(marker, Level.FATAL, msg, arg0, arg1);
+        log(marker, Level.DEBUG, msg, arg0, arg1);
     }
 
     public void debug(Marker marker, String msg, Object arg0, Object arg1, Object arg2) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2);
+        log(marker, Level.DEBUG, msg, arg0, arg1, arg2);
     }
 
     public void debug(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3);
+        log(marker, Level.DEBUG, msg, arg0, arg1, arg2, arg3);
     }
 
     public void debug(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4);
+        log(marker, Level.DEBUG, msg, arg0, arg1, arg2, arg3, arg4);
     }
 
     public void debug(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4, arg5);
+        log(marker, Level.DEBUG, msg, arg0, arg1, arg2, arg3, arg4, arg5);
     }
 
     public void debug(Marker marker, String msg, Object... args) {
-        log(marker, Level.FATAL, msg, args);
+        log(marker, Level.DEBUG, msg, args);
     }
 
     public boolean isInfoLoggable() {
@@ -268,67 +267,67 @@ public final class Logger {
     }
 
     public void info(String msg) {
-        log(Level.FATAL, msg);
+        log(Level.INFO, msg);
     }
 
     public void info(String msg, Object arg0) {
-        log(Level.FATAL, msg, arg0);
+        log(Level.INFO, msg, arg0);
     }
 
     public void info(String msg, Object arg0, Object arg1) {
-        log(Level.FATAL, msg, arg0, arg1);
+        log(Level.INFO, msg, arg0, arg1);
     }
 
     public void info(String msg, Object arg0, Object arg1, Object arg2) {
-        log(Level.FATAL, msg, arg0, arg1, arg2);
+        log(Level.INFO, msg, arg0, arg1, arg2);
     }
 
     public void info(String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3);
+        log(Level.INFO, msg, arg0, arg1, arg2, arg3);
     }
 
     public void info(String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4);
+        log(Level.INFO, msg, arg0, arg1, arg2, arg3, arg4);
     }
 
     public void info(String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4, arg5);
+        log(Level.INFO, msg, arg0, arg1, arg2, arg3, arg4, arg5);
     }
 
     public void info(String msg, Object... args) {
-        log(Level.FATAL, msg, args);
+        log(Level.INFO, msg, args);
     }
 
     public void info(Marker marker, String msg) {
-        log(marker, Level.FATAL, msg);
+        log(marker, Level.INFO, msg);
     }
 
     public void info(Marker marker, String msg, Object arg0) {
-        log(marker, Level.FATAL, msg, arg0);
+        log(marker, Level.INFO, msg, arg0);
     }
 
     public void info(Marker marker, String msg, Object arg0, Object arg1) {
-        log(marker, Level.FATAL, msg, arg0, arg1);
+        log(marker, Level.INFO, msg, arg0, arg1);
     }
 
     public void info(Marker marker, String msg, Object arg0, Object arg1, Object arg2) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2);
+        log(marker, Level.INFO, msg, arg0, arg1, arg2);
     }
 
     public void info(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3);
+        log(marker, Level.INFO, msg, arg0, arg1, arg2, arg3);
     }
 
     public void info(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4);
+        log(marker, Level.INFO, msg, arg0, arg1, arg2, arg3, arg4);
     }
 
     public void info(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4, arg5);
+        log(marker, Level.INFO, msg, arg0, arg1, arg2, arg3, arg4, arg5);
     }
 
     public void info(Marker marker, String msg, Object... args) {
-        log(marker, Level.FATAL, msg, args);
+        log(marker, Level.INFO, msg, args);
     }
 
     public boolean isWarnLoggable() {
@@ -336,67 +335,67 @@ public final class Logger {
     }
 
     public void warn(String msg) {
-        log(Level.FATAL, msg);
+        log(Level.WARN, msg);
     }
 
     public void warn(String msg, Object arg0) {
-        log(Level.FATAL, msg, arg0);
+        log(Level.WARN, msg, arg0);
     }
 
     public void warn(String msg, Object arg0, Object arg1) {
-        log(Level.FATAL, msg, arg0, arg1);
+        log(Level.WARN, msg, arg0, arg1);
     }
 
     public void warn(String msg, Object arg0, Object arg1, Object arg2) {
-        log(Level.FATAL, msg, arg0, arg1, arg2);
+        log(Level.WARN, msg, arg0, arg1, arg2);
     }
 
     public void warn(String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3);
+        log(Level.WARN, msg, arg0, arg1, arg2, arg3);
     }
 
     public void warn(String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4);
+        log(Level.WARN, msg, arg0, arg1, arg2, arg3, arg4);
     }
 
     public void warn(String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4, arg5);
+        log(Level.WARN, msg, arg0, arg1, arg2, arg3, arg4, arg5);
     }
 
     public void warn(String msg, Object... args) {
-        log(Level.FATAL, msg, args);
+        log(Level.WARN, msg, args);
     }
 
     public void warn(Marker marker, String msg) {
-        log(marker, Level.FATAL, msg);
+        log(marker, Level.WARN, msg);
     }
 
     public void warn(Marker marker, String msg, Object arg0) {
-        log(marker, Level.FATAL, msg, arg0);
+        log(marker, Level.WARN, msg, arg0);
     }
 
     public void warn(Marker marker, String msg, Object arg0, Object arg1) {
-        log(marker, Level.FATAL, msg, arg0, arg1);
+        log(marker, Level.WARN, msg, arg0, arg1);
     }
 
     public void warn(Marker marker, String msg, Object arg0, Object arg1, Object arg2) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2);
+        log(marker, Level.WARN, msg, arg0, arg1, arg2);
     }
 
     public void warn(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3);
+        log(marker, Level.WARN, msg, arg0, arg1, arg2, arg3);
     }
 
     public void warn(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4);
+        log(marker, Level.WARN, msg, arg0, arg1, arg2, arg3, arg4);
     }
 
     public void warn(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4, arg5);
+        log(marker, Level.WARN, msg, arg0, arg1, arg2, arg3, arg4, arg5);
     }
 
     public void warn(Marker marker, String msg, Object... args) {
-        log(marker, Level.FATAL, msg, args);
+        log(marker, Level.WARN, msg, args);
     }
 
     public boolean isErrorLoggable() {
@@ -404,67 +403,67 @@ public final class Logger {
     }
 
     public void error(String msg) {
-        log(Level.FATAL, msg);
+        log(Level.ERROR, msg);
     }
 
     public void error(String msg, Object arg0) {
-        log(Level.FATAL, msg, arg0);
+        log(Level.ERROR, msg, arg0);
     }
 
     public void error(String msg, Object arg0, Object arg1) {
-        log(Level.FATAL, msg, arg0, arg1);
+        log(Level.ERROR, msg, arg0, arg1);
     }
 
     public void error(String msg, Object arg0, Object arg1, Object arg2) {
-        log(Level.FATAL, msg, arg0, arg1, arg2);
+        log(Level.ERROR, msg, arg0, arg1, arg2);
     }
 
     public void error(String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3);
+        log(Level.ERROR, msg, arg0, arg1, arg2, arg3);
     }
 
     public void error(String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4);
+        log(Level.ERROR, msg, arg0, arg1, arg2, arg3, arg4);
     }
 
     public void error(String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        log(Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4, arg5);
+        log(Level.ERROR, msg, arg0, arg1, arg2, arg3, arg4, arg5);
     }
 
     public void error(String msg, Object... args) {
-        log(Level.FATAL, msg, args);
+        log(Level.ERROR, msg, args);
     }
 
     public void error(Marker marker, String msg) {
-        log(marker, Level.FATAL, msg);
+        log(marker, Level.ERROR, msg);
     }
 
     public void error(Marker marker, String msg, Object arg0) {
-        log(marker, Level.FATAL, msg, arg0);
+        log(marker, Level.ERROR, msg, arg0);
     }
 
     public void error(Marker marker, String msg, Object arg0, Object arg1) {
-        log(marker, Level.FATAL, msg, arg0, arg1);
+        log(marker, Level.ERROR, msg, arg0, arg1);
     }
 
     public void error(Marker marker, String msg, Object arg0, Object arg1, Object arg2) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2);
+        log(marker, Level.ERROR, msg, arg0, arg1, arg2);
     }
 
     public void error(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3);
+        log(marker, Level.ERROR, msg, arg0, arg1, arg2, arg3);
     }
 
     public void error(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4);
+        log(marker, Level.ERROR, msg, arg0, arg1, arg2, arg3, arg4);
     }
 
     public void error(Marker marker, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        log(marker, Level.FATAL, msg, arg0, arg1, arg2, arg3, arg4, arg5);
+        log(marker, Level.ERROR, msg, arg0, arg1, arg2, arg3, arg4, arg5);
     }
 
     public void error(Marker marker, String msg, Object... args) {
-        log(marker, Level.FATAL, msg, args);
+        log(marker, Level.ERROR, msg, args);
     }
 
     public boolean isFatalLoggable() {

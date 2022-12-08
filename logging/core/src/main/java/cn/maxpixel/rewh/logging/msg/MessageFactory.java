@@ -1,30 +1,34 @@
 package cn.maxpixel.rewh.logging.msg;
 
+import cn.maxpixel.rewh.logging.Config;
 import cn.maxpixel.rewh.logging.Level;
+import cn.maxpixel.rewh.logging.LogManager;
 import cn.maxpixel.rewh.logging.Marker;
 
-import java.time.Instant;
-import java.util.ServiceLoader;
+import java.time.ZonedDateTime;
 
 public abstract class MessageFactory {
-    private static final ServiceLoader<MessageFactory> serviceLoader = ServiceLoader.load(MessageFactory.class);
-    private static MessageFactory current = serviceLoader.iterator().next();
+    private static MessageFactory current;
 
     public static MessageFactory get() {
         return current;
     }
 
     public static synchronized void reload() {
-        serviceLoader.reload();
-        current = serviceLoader.iterator().next();
+        try {
+            current = (MessageFactory) Class.forName(Config.get().messageFactory).getConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
+            current = new SimpleMessageFactory();
+            LogManager.getLogger().fatal("Error loading the message factory: {}. It must be a valid class and have a no-arg public constructor", Config.get().messageFactory, e);
+        }
     }
 
-    public abstract Message create(Marker marker, StackTraceElement caller, Level level, Instant instant, String message);
-    public abstract Message create(Marker marker, StackTraceElement caller, Level level, Instant instant, String message, Object arg0);
-    public abstract Message create(Marker marker, StackTraceElement caller, Level level, Instant instant, String message, Object arg0, Object arg1);
-    public abstract Message create(Marker marker, StackTraceElement caller, Level level, Instant instant, String message, Object arg0, Object arg1, Object arg2);
-    public abstract Message create(Marker marker, StackTraceElement caller, Level level, Instant instant, String message, Object arg0, Object arg1, Object arg2, Object arg3);
-    public abstract Message create(Marker marker, StackTraceElement caller, Level level, Instant instant, String message, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4);
-    public abstract Message create(Marker marker, StackTraceElement caller, Level level, Instant instant, String message, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5);
-    public abstract Message create(Marker marker, StackTraceElement caller, Level level, Instant instant, String message, Object[] args);
+    public abstract Message create(Marker marker, StackTraceElement caller, Level level, ZonedDateTime timestamp, String message);
+    public abstract Message create(Marker marker, StackTraceElement caller, Level level, ZonedDateTime timestamp, String message, Object arg0);
+    public abstract Message create(Marker marker, StackTraceElement caller, Level level, ZonedDateTime timestamp, String message, Object arg0, Object arg1);
+    public abstract Message create(Marker marker, StackTraceElement caller, Level level, ZonedDateTime timestamp, String message, Object arg0, Object arg1, Object arg2);
+    public abstract Message create(Marker marker, StackTraceElement caller, Level level, ZonedDateTime timestamp, String message, Object arg0, Object arg1, Object arg2, Object arg3);
+    public abstract Message create(Marker marker, StackTraceElement caller, Level level, ZonedDateTime timestamp, String message, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4);
+    public abstract Message create(Marker marker, StackTraceElement caller, Level level, ZonedDateTime timestamp, String message, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5);
+    public abstract Message create(Marker marker, StackTraceElement caller, Level level, ZonedDateTime timestamp, String message, Object[] args);
 }

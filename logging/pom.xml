@@ -19,7 +19,5 @@
 
 	<modules>
 		<module>core</module>
-		<module>simple</module>
-		<module>reuse</module>
 	</modules>
 </project>

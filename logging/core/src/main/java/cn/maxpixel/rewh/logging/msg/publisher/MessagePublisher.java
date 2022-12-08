@@ -1,7 +1,7 @@
 package cn.maxpixel.rewh.logging.msg.publisher;
 
+import cn.maxpixel.rewh.logging.Config;
 import cn.maxpixel.rewh.logging.Logger;
-import cn.maxpixel.rewh.logging.config.LoggerConfig;
 import cn.maxpixel.rewh.logging.msg.Message;
 import com.google.gson.JsonParseException;
 import com.google.gson.TypeAdapter;
@@ -13,17 +13,19 @@ import java.io.IOException;
 import java.util.function.UnaryOperator;
 
 public interface MessagePublisher {
-    default boolean isLoggable(Logger logger, LoggerConfig config, Message message) {
+    MessagePublisher NOP = (message, throwable, colorApplicator) -> {};
+    default boolean isLoggable(Logger logger, Config.Logger config, Message message) {
         return true;
     }
 
-    void publish(String message, UnaryOperator<Ansi> colorApplicator) throws IOException;
+    void publish(String message, Throwable throwable, UnaryOperator<Ansi> colorApplicator) throws IOException;
 
     class Adapter extends TypeAdapter<MessagePublisher> {
         @Override
         public void write(JsonWriter out, MessagePublisher value) throws IOException {
             if (value == OutputStreamMessagePublisher.STDOUT) out.value("STDOUT");
             else if (value == OutputStreamMessagePublisher.STDERR) out.value("STDERR");
+            else if (value == NOP) out.value("NOP");
             throw new UnsupportedOperationException("Currently unsupported");
         }
 
@@ -34,6 +36,8 @@ public interface MessagePublisher {
                     return OutputStreamMessagePublisher.STDOUT;
                 case "STDERR":
                     return OutputStreamMessagePublisher.STDERR;
+                case "NOP":
+                    return NOP;
                 default:
                     throw new JsonParseException("Currently unsupported");
             }

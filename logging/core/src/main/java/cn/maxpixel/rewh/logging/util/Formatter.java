@@ -1,5 +1,6 @@
-package cn.maxpixel.rewh.logging.config;
+package cn.maxpixel.rewh.logging.util;
 
+import cn.maxpixel.rewh.logging.Config;
 import cn.maxpixel.rewh.logging.Level;
 import cn.maxpixel.rewh.logging.Logger;
 import cn.maxpixel.rewh.logging.Marker;
@@ -15,7 +16,7 @@ import org.fusesource.jansi.Ansi;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Objects;
@@ -161,13 +162,13 @@ public final class Formatter {
         }
     }
 
-    public String format(Instant instant, StackTraceElement caller, String name, Marker marker, Level level, String msg) {
+    public String format(ZonedDateTime timestamp, StackTraceElement caller, String name, Marker marker, Level level, String msg) {
         if (components != null) {
             Objects.requireNonNull(name);
             if (caller == null) caller = Logger.UNKNOWN;
             Objects.requireNonNull(level);
             Objects.requireNonNull(msg);
-            StringBuilder sb = new StringBuilder(formatString.length());
+            StringBuilder sb = new StringBuilder(formatString.length() + 16);
             int index = 0;
             for (byte component : components) {
                 switch (component) {
@@ -184,8 +185,8 @@ public final class Formatter {
                         if (marker == null) sb.append("No marker");
                         else sb.append(marker.name);
                     case TYPE_TIME:
-                        if (instant == null) sb.append("Unknown time");
-                        else dateTimeFormatter.formatTo(instant, sb);
+                        if (timestamp == null) sb.append("Unknown time");
+                        else dateTimeFormatter.formatTo(timestamp, sb);
                         break;
                     case TYPE_SOURCE_CLASS:
                         sb.append(caller.getClassName());
@@ -227,19 +228,17 @@ public final class Formatter {
                     String formatString = DEFAULT.formatString;
                     String time = DEFAULT.time;
                     Map<Level, Color> color = null;
-                    while (in.peek() == JsonToken.NAME) {
-                        switch (in.nextName()) {
-                            case "format":
-                                formatString = in.nextString();
-                                break;
-                            case "time":
-                                time = in.nextString();
-                                break;
-                            case "color":
-                                color = Config.GSON.fromJson(in, Map.class);
-                                break;
-                        }
-                    }
+                    do switch (in.nextName()) {
+                        case "format":
+                            formatString = in.nextString();
+                            break;
+                        case "time":
+                            time = in.nextString();
+                            break;
+                        case "color":
+                            color = Config.GSON.fromJson(in, Map.class);
+                            break;
+                    } while (in.peek() == JsonToken.NAME);
                     in.endObject();
                     return new Formatter(formatString, time, color);
                 default:
