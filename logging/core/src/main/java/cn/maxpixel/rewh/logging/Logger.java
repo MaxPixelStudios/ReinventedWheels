@@ -6,18 +6,23 @@ import cn.maxpixel.rewh.logging.msg.filter.Filter;
 import cn.maxpixel.rewh.logging.msg.publisher.MessagePublisher;
 import cn.maxpixel.rewh.logging.util.CallerFinder;
 import cn.maxpixel.rewh.logging.util.Reusable;
-import org.fusesource.jansi.Ansi;
 
 import java.io.IOException;
 import java.time.Clock;
-import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.util.Objects;
-import java.util.function.UnaryOperator;
 
 public final class Logger {
     public static final StackTraceElement UNKNOWN = new StackTraceElement("Unknown Class", "Unknown Method", null, 0);
+    public static final ZoneId ZONE = ZoneId.systemDefault();
+    /*
+     * Some notes:
+     * https://github.com/openjdk/jdk/commit/6c838c568c2c99145fd0ae8059de2b2865b65863
+     * Since the introduction of java.time.InstantSource in jdk 17,
+     * Instant.now() calls no longer create Clock instances
+     */
+    public static final Clock CLOCK = Clock.systemUTC();
     private static final String FQCN = Logger.class.getTypeName();
-    private static final Clock CLOCK = Clock.systemDefaultZone();
     public final String name;
     private Config.Logger config;
     private MessagePublisher[] publishers;
@@ -28,12 +33,16 @@ public final class Logger {
     }
 
     void reload() {
-        this.config = Config.getConfig(name);// TODO: hierarchy
+        this.config = Config.getConfig(name);
         this.publishers = Config.get().publishers;
     }
 
     private StackTraceElement fetchCaller() {
         return config.fetchCaller ? CallerFinder.findCaller(FQCN) : null;
+    }
+    
+    private static long mills() {
+        return System.currentTimeMillis();
     }
 
     // Core methods
@@ -45,13 +54,17 @@ public final class Logger {
     public void log(Message message) {
         try {
             if (!isLoggable(message.getLevel())) return;
-            for (Filter filter : config.filters) if (!filter.isLoggable(message)) return;
-            String formatted = config.formatter.format(message.getTimestamp(), message.getCaller(), name, message.getMarker(),
-                    message.getLevel(), message.makeFormattedMessage(config));
-            UnaryOperator<Ansi> colorApplicator = config.formatter.getColorApplicator(message.getLevel());
+            for (Filter filter : config.filters) if (!filter.isLoggable(this, config, message)) return;
+            StringBuilder formatted = null;
+            String colorPrefix = config.formatter.getColorPrefix(message.getLevel());
             for (MessagePublisher publisher : publishers)
-                if (publisher.isLoggable(this, config, message))
-                    publisher.publish(formatted, message.getThrowable(), colorApplicator);
+                if (publisher.isLoggable(this, config, message)) {
+                    if (formatted == null) {
+                        formatted = config.formatter.format(message.getTimestamp(), message.getCaller(), name,
+                                message.getMarker(), message.getLevel(), message.makeFormattedMessage(config));
+                    }
+                    publisher.publish(formatted, message.getThrowable(), colorPrefix);
+                }
         } catch (IOException e) {
             System.err.println("Failed to log the message");
             e.printStackTrace();
@@ -61,67 +74,67 @@ public final class Logger {
     }
 
     public void log(Level level, String msg) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, mills(), msg));
     }
 
     public void log(Level level, String msg, Object arg0) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, mills(), msg, arg0));
     }
 
     public void log(Level level, String msg, Object arg0, Object arg1) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, mills(), msg, arg0, arg1));
     }
 
     public void log(Level level, String msg, Object arg0, Object arg1, Object arg2) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, mills(), msg, arg0, arg1, arg2));
     }
 
     public void log(Level level, String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2, arg3));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, mills(), msg, arg0, arg1, arg2, arg3));
     }
 
     public void log(Level level, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2, arg3, arg4));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, mills(), msg, arg0, arg1, arg2, arg3, arg4));
     }
 
     public void log(Level level, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2, arg3, arg4, arg5));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, mills(), msg, arg0, arg1, arg2, arg3, arg4, arg5));
     }
 
     public void log(Level level, String msg, Object... args) {
-        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, args));
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, mills(), msg, args));
     }
 
     public void log(Marker marker, Level level, String msg) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, mills(), msg));
     }
 
     public void log(Marker marker, Level level, String msg, Object arg0) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, mills(), msg, arg0));
     }
 
     public void log(Marker marker, Level level, String msg, Object arg0, Object arg1) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, mills(), msg, arg0, arg1));
     }
 
     public void log(Marker marker, Level level, String msg, Object arg0, Object arg1, Object arg2) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, mills(), msg, arg0, arg1, arg2));
     }
 
     public void log(Marker marker, Level level, String msg, Object arg0, Object arg1, Object arg2, Object arg3) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2, arg3));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, mills(), msg, arg0, arg1, arg2, arg3));
     }
 
     public void log(Marker marker, Level level, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2, arg3, arg4));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, mills(), msg, arg0, arg1, arg2, arg3, arg4));
     }
 
     public void log(Marker marker, Level level, String msg, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, arg0, arg1, arg2, arg3, arg4, arg5));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, mills(), msg, arg0, arg1, arg2, arg3, arg4, arg5));
     }
 
     public void log(Marker marker, Level level, String msg, Object... args) {
-        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, ZonedDateTime.now(CLOCK), msg, args));
+        if(isLoggable(level)) log(MessageFactory.get().create(marker, fetchCaller(), level, mills(), msg, args));
     }
 
     // Convenience methods

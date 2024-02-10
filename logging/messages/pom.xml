@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>cn.maxpixel.rewh.logging</groupId>
+        <artifactId>parent</artifactId>
+        <version>0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>logging-messages</artifactId>
+    <name>Logging - Messages</name>
+    <description>Some other types of messages of the logging service</description>
+
+    <properties>
+        <rewh.moduleId>messages</rewh.moduleId>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>cn.maxpixel.rewh.logging</groupId>
+            <artifactId>logging-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.fusesource.jansi</groupId>
+            <artifactId>jansi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil</artifactId>
+        </dependency>
+        <!--		<dependency>-->
+        <!--			<groupId>org.junit.jupiter</groupId>-->
+        <!--			<artifactId>junit-jupiter-engine</artifactId>-->
+        <!--		</dependency>-->
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin><artifactId>maven-source-plugin</artifactId></plugin>
+            <plugin><artifactId>maven-javadoc-plugin</artifactId></plugin>
+        </plugins>
+    </build>
+</project>

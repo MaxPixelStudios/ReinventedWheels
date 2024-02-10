@@ -1,4 +1,4 @@
-package cn.maxpixel.rewh.logging.test.benchmark;
+package cn.maxpixel.rewh.logging.benchmark;
 
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
-@Fork(2)
+@Fork(1)
 public class FormatterBenchmark {
     @Param({"[%time%] [%source_class%/%source_method%] [%name%] [%level%] %msg%\n", "%1%msg%", "%1%1%msg%"})
     public String formatString;

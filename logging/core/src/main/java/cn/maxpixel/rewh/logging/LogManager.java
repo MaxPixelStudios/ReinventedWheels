@@ -6,7 +6,7 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import java.util.function.Function;
 
-public class LogManager {
+public final class LogManager {
     private static final String FQCN = LogManager.class.getTypeName();
     private static final Object2ObjectOpenHashMap<String, Logger> LOGGERS = new Object2ObjectOpenHashMap<>();
     private static final Object2ObjectOpenHashMap<String, Marker> MARKERS = new Object2ObjectOpenHashMap<>();

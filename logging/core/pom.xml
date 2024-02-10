@@ -9,12 +9,12 @@
 		<version>0.1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>core</artifactId>
+	<artifactId>logging-core</artifactId>
 	<name>Logging - Core</name>
 	<description>Core of the logging service.</description>
 
 	<properties>
-		<rewh.moduleId>logging.core</rewh.moduleId>
+		<rewh.moduleId>core</rewh.moduleId>
 	</properties>
 
 	<dependencies>
@@ -30,14 +30,6 @@
 			<groupId>it.unimi.dsi</groupId>
 			<artifactId>fastutil</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.openjdk.jmh</groupId>
-			<artifactId>jmh-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.openjdk.jmh</groupId>
-			<artifactId>jmh-generator-annprocess</artifactId>
-		</dependency>
 <!--		<dependency>-->
 <!--			<groupId>org.junit.jupiter</groupId>-->
 <!--			<artifactId>junit-jupiter-engine</artifactId>-->
@@ -48,6 +40,16 @@
 		<plugins>
 			<plugin><artifactId>maven-source-plugin</artifactId></plugin>
 			<plugin><artifactId>maven-javadoc-plugin</artifactId></plugin>
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<Multi-Release>true</Multi-Release>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 </project>

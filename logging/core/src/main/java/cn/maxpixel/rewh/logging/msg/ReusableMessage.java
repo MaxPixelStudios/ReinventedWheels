@@ -7,23 +7,23 @@ import cn.maxpixel.rewh.logging.util.Reusable;
 import it.unimi.dsi.fastutil.objects.ObjectIterators;
 
 import java.text.MessageFormat;
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Iterator;
 
-public class ReusableMessage implements Message, Reusable {
-    private volatile Marker marker;
-    private volatile StackTraceElement caller;
-    private volatile Level level;
-    private volatile ZonedDateTime timestamp;
-    private volatile String message;
+public final class ReusableMessage implements Message, Reusable {
+    private Marker marker;
+    private StackTraceElement caller;
+    private Level level;
+    private long timestamp;
+    private String message;
     private final Object[] args = new Object[5];
-    private volatile int argLength;
-    private volatile Object[] arguments;
-    private volatile Throwable throwable;
+    private int argLength;
+    private Object[] arguments;
+    private Throwable throwable;
 
-    volatile boolean ready = true;
-    private volatile String formatted;
+    boolean ready = true;
+    private boolean didFormat;
+    private final StringBuilder formatted = new StringBuilder();
 
     @Override
     public Marker getMarker() {
@@ -41,7 +41,7 @@ public class ReusableMessage implements Message, Reusable {
     }
 
     @Override
-    public ZonedDateTime getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 
@@ -75,17 +75,19 @@ public class ReusableMessage implements Message, Reusable {
     }
 
     @Override
-    public String makeFormattedMessage(Config.Logger config) {
-        if (formatted == null) {
-            if (argLength > 0) {
-                String replaced = Message.replaceParams(message, arguments == null ? args : arguments, argLength);
-                if (config.messageFormat || config.stringFormat) {
-                    Object[] objs = arguments == null ? Arrays.copyOf(args, argLength) : arguments;
-                    if (config.messageFormat) replaced = MessageFormat.format(replaced, objs);
-                    if (config.stringFormat) replaced = String.format(replaced, objs);
-                }
-                this.formatted = replaced;
-            } else this.formatted = message;
+    public StringBuilder makeFormattedMessage(Config.Logger config) {
+        if (!didFormat) {
+            formatted.setLength(0);
+            Message.replaceParams(message, arguments == null ? args : arguments, argLength, formatted);
+            if (argLength > 0 && (config.messageFormat || config.stringFormat)) {// FIXME: trash design
+                Object[] objs = arguments == null ? Arrays.copyOf(args, argLength) : arguments;
+                String replaced = formatted.toString();
+                if (config.messageFormat) replaced = MessageFormat.format(replaced, objs);
+                if (config.stringFormat) replaced = String.format(replaced, objs);
+                formatted.setLength(0);
+                formatted.append(replaced);
+            }
+            this.didFormat = true;
         }
         return formatted;
     }
@@ -94,11 +96,11 @@ public class ReusableMessage implements Message, Reusable {
     public void ready() {
         this.argLength = -1;
         this.arguments = null;
-        this.formatted = null;
+        this.didFormat = false;
         this.ready = true;
     }
 
-    ReusableMessage init(Marker marker, StackTraceElement caller, Level level, ZonedDateTime timestamp, String message) {
+    ReusableMessage init(Marker marker, StackTraceElement caller, Level level, long timestamp, String message) {
         if (!ready) throw new IllegalStateException("Message is not ready");
         this.ready = false;
         this.marker = marker;

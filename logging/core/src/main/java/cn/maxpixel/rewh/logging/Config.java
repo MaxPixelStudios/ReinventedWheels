@@ -12,15 +12,19 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.annotations.Since;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import org.fusesource.jansi.Ansi;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Objects;
 
 public final class Config {
-    private static final Config DEFAULT = new Config();
-    public static final boolean ENABLE_JANSI = Boolean.parseBoolean(System.getProperty("rewh.enable_jansi", "true")) && System.console() != null;
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Map.class, (InstanceCreator<Map<?, ?>>) type -> new Object2ObjectOpenHashMap<>())
             .registerTypeAdapter(Level.class, new Level.Adapter())
@@ -31,8 +35,18 @@ public final class Config {
             .setPrettyPrinting()
             .setVersion(0.1)
             .create();
-
+    public static final boolean JANSI_INSTALLED;
+    public static final boolean COLORFUL;
     static {
+        boolean jansiInstalled;
+        try {
+            Ansi.class.getName();
+            jansiInstalled = true;
+        } catch (NoClassDefFoundError e) {// JAnsi not found
+            jansiInstalled = false;
+        }
+        JANSI_INSTALLED = jansiInstalled;
+        COLORFUL = jansiInstalled && Boolean.parseBoolean(System.getProperty("rewh.logging.colorful", "true"));
         reload();
     }
     public static void init() {}
@@ -53,11 +67,11 @@ public final class Config {
     @SerializedName("factory")
     public String messageFactory = "cn.maxpixel.rewh.logging.msg.ReusableMessageFactory";
 
-    private Config() {
+    public Config() {
         loggers.put("root", new Logger());
     }
 
-    private Config(Config config) {
+    public Config(Config config) {
         Object2ObjectOpenHashMap<String, Logger> map = new Object2ObjectOpenHashMap<>(config.loggers.size());
         config.loggers.forEach((k, v) -> map.put(k, new Logger(v)));
         this.loggers = map;
@@ -65,23 +79,22 @@ public final class Config {
     }
 
     public static void set(Config config) {
-        CONFIG = Objects.requireNonNull(config);
+        CONFIG = config == null ? new Config() : config;
         LogManager.reload();
+        MessageFactory.reload();
     }
 
     public static Config get() {
         return CONFIG;
     }
 
-    public static Logger getConfig(String name) {
+    public static Logger getConfig(String name) {// TODO: hierarchy
         return CONFIG.loggers.getOrDefault(name, CONFIG.loggers.get("root"));
     }
 
     public static void reload() {
         CONFIG_PATH = System.getProperty("rewh.logging.config.path", "rewh_logging_config.json");
-        CONFIG = load();
-        LogManager.reload();
-        MessageFactory.reload();
+        set(load());
     }
 
     private static Config load() {
@@ -94,16 +107,15 @@ public final class Config {
         } catch (IOException e) {
             // Keep going
         }
-        File f = new File(CONFIG_PATH);
-        if (f.exists()) {
-            if (f.isDirectory()) throw new IllegalArgumentException("Not a file: " + CONFIG_PATH);
-            try (FileReader reader = new FileReader(f)) {
+        Path p = Paths.get(CONFIG_PATH);
+        if (Files.isReadable(p)) {
+            try (BufferedReader reader = Files.newBufferedReader(p)) {
                 return GSON.fromJson(reader, Config.class);
             } catch (IOException e) {
                 System.err.println("Failed to load config file: " + CONFIG_PATH + ", using default config.");
             }
         }
-        return new Config(DEFAULT);
+        return new Config();
     }
 
     public static final class Logger {
@@ -132,7 +144,7 @@ public final class Config {
 
         @Since(0.1)
         @Expose
-        public Filter[] filters = new Filter[0];
+        public Filter[] filters = new Filter[0];// TODO: filter
 
         public Logger() {
         }

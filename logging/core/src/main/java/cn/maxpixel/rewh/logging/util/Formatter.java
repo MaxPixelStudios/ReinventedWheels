@@ -16,11 +16,11 @@ import org.fusesource.jansi.Ansi;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.UnaryOperator;
 
 public final class Formatter {
     /**
@@ -66,12 +66,14 @@ public final class Formatter {
 
     private final Map<Level, Color> color = new Object2ObjectOpenHashMap<>();
     {
-        color.put(Level.TRACE, new Color(Ansi.Color.BLACK, true));
-        color.put(Level.DEBUG, new Color(Ansi.Color.WHITE, false));
-        color.put(Level.INFO, new Color(Ansi.Color.WHITE, true));
-        color.put(Level.WARN, new Color(Ansi.Color.YELLOW, false));
-        color.put(Level.ERROR, new Color(Ansi.Color.RED, false));
-        color.put(Level.FATAL, new Color(Ansi.Color.RED, true));
+        if (Config.JANSI_INSTALLED) {
+            color.put(Level.TRACE, new Color(Ansi.Color.BLACK, true));
+            color.put(Level.DEBUG, new Color(Ansi.Color.WHITE, false));
+            color.put(Level.INFO, new Color(Ansi.Color.WHITE, true));
+            color.put(Level.WARN, new Color(Ansi.Color.YELLOW, false));
+            color.put(Level.ERROR, new Color(Ansi.Color.RED, false));
+            color.put(Level.FATAL, new Color(Ansi.Color.RED, true));
+        }
     }
     private final String time;
     private final String formatString;
@@ -79,6 +81,7 @@ public final class Formatter {
     private final String[] strings;
     private final byte[] components;
     private final DateTimeFormatter dateTimeFormatter;
+    private final ThreadLocal<StringBuilder> buffers;
 
     public Formatter(String formatString) {
         this(formatString, "ISO_LOCAL_DATE_TIME", null);
@@ -94,6 +97,7 @@ public final class Formatter {
 
     public Formatter(String formatString, String time, Map<Level, Color> color) {
         this.formatString = formatString;
+        this.buffers = ThreadLocal.withInitial(() -> new StringBuilder(this.formatString.length() + 16));
         this.time = time;
         if (color != null) this.color.putAll(color);
         DateTimeFormatter dateTimeFormatter = BY_NAME.get(time);
@@ -162,13 +166,14 @@ public final class Formatter {
         }
     }
 
-    public String format(ZonedDateTime timestamp, StackTraceElement caller, String name, Marker marker, Level level, String msg) {
+    public StringBuilder format(long timestamp, StackTraceElement caller, String name, Marker marker, Level level, StringBuilder msg) {
         if (components != null) {
             Objects.requireNonNull(name);
             if (caller == null) caller = Logger.UNKNOWN;
             Objects.requireNonNull(level);
             Objects.requireNonNull(msg);
-            StringBuilder sb = new StringBuilder(formatString.length() + 16);
+            StringBuilder sb = buffers.get();
+            sb.setLength(0);
             int index = 0;
             for (byte component : components) {
                 switch (component) {
@@ -185,8 +190,7 @@ public final class Formatter {
                         if (marker == null) sb.append("No marker");
                         else sb.append(marker.name);
                     case TYPE_TIME:
-                        if (timestamp == null) sb.append("Unknown time");
-                        else dateTimeFormatter.formatTo(timestamp, sb);
+                        dateTimeFormatter.formatTo(ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), Logger.ZONE), sb);
                         break;
                     case TYPE_SOURCE_CLASS:
                         sb.append(caller.getClassName());
@@ -199,14 +203,15 @@ public final class Formatter {
                         break;
                 }
             }
-            return sb.toString();
+            return sb;
         }
-        return formatString;
+        return new StringBuilder(formatString);// This won't be executed the most cases
     }
 
-    public UnaryOperator<Ansi> getColorApplicator(Level level) {
-        Color c = color.get(level);
-        return c::applyColor;
+    public String getColorPrefix(Level level) {
+        Color c;
+        if (!Config.COLORFUL || (c = color.get(level)) == null) return "";
+        return c.colorString;
     }
 
     public static class Adapter extends TypeAdapter<Formatter> {
@@ -251,14 +256,15 @@ public final class Formatter {
         public enum Type {
             COLOR_8,
             COLOR_256,
-            TRUE_COLOR
+            COLOR_RGB
         }
 
         public final Type type;
         public final int value;
-
-        private final Ansi.Color val;
+        public final Ansi.Color val;
         public final boolean bright;
+
+        public final String colorString;
 
         private Color(Type type, int value) {
             if (value < 0) throw new IllegalArgumentException("value must be positive");
@@ -266,6 +272,15 @@ public final class Formatter {
             this.value = value;
             this.val = null;
             this.bright = false;
+            StringBuilder sb = new StringBuilder("\33[38;");// 33 == (char) 27
+            if (type == Type.COLOR_256) {
+                sb.append("5;").append(value & 0xff);
+            } else if (type == Type.COLOR_RGB) {
+                sb.append("2;").append((value >> 16) & 0xff)
+                        .append(';').append((value >> 8) & 0xff)
+                        .append(';').append(value & 0xff);
+            } else throw new IllegalArgumentException("Invalid color type");
+            this.colorString = sb.append('m').toString();
         }
 
         private Color(Ansi.Color val, boolean bright) {
@@ -273,22 +288,7 @@ public final class Formatter {
             this.value = -1;
             this.val = val;
             this.bright = bright;
-        }
-
-        public Ansi applyColor(Ansi ansi) {
-            switch (type) {
-                case COLOR_8:
-                    if (bright) ansi.fgBright(val);
-                    else ansi.fg(val);
-                    break;
-                case COLOR_256:
-                    ansi.fg(value);
-                    break;
-                case TRUE_COLOR:
-                    ansi.fgRgb(value);
-                    break;
-            }
-            return ansi;
+            this.colorString = "\33[" + (bright ? val.fgBright() : val.fg()) + 'm';// 33 == (char) 27
         }
 
         public static final class Adapter extends TypeAdapter<Color> {
@@ -301,8 +301,8 @@ public final class Formatter {
                     case COLOR_256:
                         out.value("256:" + value.value);
                         break;
-                    case TRUE_COLOR:
-                        out.value("truecolor:" + value.value);
+                    case COLOR_RGB:
+                        out.value("rgb:" + value.value);
                         break;
                     default:
                         throw new IllegalArgumentException("Unknown color type");
@@ -311,6 +311,7 @@ public final class Formatter {
 
             @Override
             public Color read(JsonReader in) throws IOException {
+                if (!Config.JANSI_INSTALLED) return null;
                 String[] sa = in.nextString().split(":");
                 if (sa.length != 2 && sa.length != 3) throw new JsonParseException("Invalid color format");
                 switch (sa[0]) {
@@ -319,8 +320,8 @@ public final class Formatter {
                                 sa.length == 3 && sa[2].equalsIgnoreCase("bright"));
                     case "256":
                         return new Color(Type.COLOR_256, Integer.parseInt(sa[1]));
-                    case "truecolor":
-                        return new Color(Type.TRUE_COLOR, Integer.parseInt(sa[1]));
+                    case "rgb":
+                        return new Color(Type.COLOR_RGB, Integer.parseInt(sa[1]));
                     default:
                         throw new JsonParseException("Invalid color type");
                 }

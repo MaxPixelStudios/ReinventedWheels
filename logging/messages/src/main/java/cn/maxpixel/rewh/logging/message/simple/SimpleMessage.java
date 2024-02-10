@@ -1,12 +1,12 @@
-package cn.maxpixel.rewh.logging.msg;
+package cn.maxpixel.rewh.logging.message.simple;
 
 import cn.maxpixel.rewh.logging.Config;
 import cn.maxpixel.rewh.logging.Level;
 import cn.maxpixel.rewh.logging.Marker;
+import cn.maxpixel.rewh.logging.msg.Message;
 import it.unimi.dsi.fastutil.objects.ObjectIterators;
 
 import java.text.MessageFormat;
-import java.time.ZonedDateTime;
 import java.util.Iterator;
 import java.util.Objects;
 
@@ -14,14 +14,15 @@ public final class SimpleMessage implements Message {
     private final Marker marker;
     private final StackTraceElement caller;
     private final Level level;
-    private final ZonedDateTime timestamp;
+    private final long timestamp;
     private final String message;
     private final Object[] args;
     private final Throwable throwable;
 
-    private String formatted;
+    private final StringBuilder formatted = new StringBuilder();
+    private boolean didFormat;
 
-    public SimpleMessage(Marker marker, StackTraceElement caller, Level level, ZonedDateTime timestamp, String message, Object[] args, Throwable throwable) {
+    public SimpleMessage(Marker marker, StackTraceElement caller, Level level, long timestamp, String message, Object[] args, Throwable throwable) {
         this.marker = marker;
         this.caller = Objects.requireNonNull(caller);
         this.level = Objects.requireNonNull(level);
@@ -47,7 +48,7 @@ public final class SimpleMessage implements Message {
     }
 
     @Override
-    public ZonedDateTime getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 
@@ -77,14 +78,17 @@ public final class SimpleMessage implements Message {
     }
 
     @Override
-    public String makeFormattedMessage(Config.Logger config) {
-        if (formatted == null) {
-            if (args.length > 0) {
-                String replaced = Message.replaceParams(message, args, args.length);
+    public StringBuilder makeFormattedMessage(Config.Logger config) {
+        if (!didFormat) {
+            Message.replaceParams(message, args, args.length, formatted);
+            if (args.length > 0 && (config.messageFormat || config.stringFormat)) {
+                String replaced = formatted.toString();
                 if (config.messageFormat) replaced = MessageFormat.format(replaced, args);
                 if (config.stringFormat) replaced = String.format(replaced, args);
-                this.formatted = replaced;
-            } else this.formatted = message;
+                this.formatted.setLength(0);
+                this.formatted.append(replaced);
+            }
+            this.didFormat = true;
         }
         return formatted;
     }

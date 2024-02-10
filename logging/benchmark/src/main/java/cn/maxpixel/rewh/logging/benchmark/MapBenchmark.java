@@ -1,4 +1,4 @@
-package cn.maxpixel.rewh.logging.test.benchmark;
+package cn.maxpixel.rewh.logging.benchmark;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;

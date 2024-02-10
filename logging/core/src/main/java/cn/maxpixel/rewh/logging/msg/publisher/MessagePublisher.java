@@ -7,18 +7,17 @@ import com.google.gson.JsonParseException;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import org.fusesource.jansi.Ansi;
 
 import java.io.IOException;
-import java.util.function.UnaryOperator;
 
 public interface MessagePublisher {
     MessagePublisher NOP = (message, throwable, colorApplicator) -> {};
+
     default boolean isLoggable(Logger logger, Config.Logger config, Message message) {
         return true;
     }
 
-    void publish(String message, Throwable throwable, UnaryOperator<Ansi> colorApplicator) throws IOException;
+    void publish(StringBuilder message, Throwable throwable, String colorPrefix) throws IOException;
 
     class Adapter extends TypeAdapter<MessagePublisher> {
         @Override

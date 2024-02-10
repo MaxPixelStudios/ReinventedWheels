@@ -4,7 +4,6 @@ import cn.maxpixel.rewh.logging.Config;
 import cn.maxpixel.rewh.logging.Level;
 import cn.maxpixel.rewh.logging.Marker;
 
-import java.time.ZonedDateTime;
 import java.util.Iterator;
 
 public interface Message {
@@ -14,7 +13,7 @@ public interface Message {
 
     Level getLevel();
 
-    ZonedDateTime getTimestamp();
+    long getTimestamp();
 
     String getMessage();
 
@@ -26,29 +25,26 @@ public interface Message {
 
     Throwable getThrowable();
 
-    String makeFormattedMessage(Config.Logger config);
+    StringBuilder makeFormattedMessage(Config.Logger config);
 
-    static String replaceParams(String msg, Object[] params, int paramCount) {
-        if (!msg.contains("{}") || paramCount <= 0) return msg;
-        if (msg.equals("{}")) return params[0].toString();
-        if (msg.equals("\\{}")) return "{}";
-        StringBuilder sb = new StringBuilder();
+    static void replaceParams(String msg, Object[] params, int paramCount, StringBuilder dest) {
+        if (!msg.contains("{}") || paramCount <= 0) dest.append(msg);
+        if (msg.equals("{}")) dest.append(params[0]);
+        if (msg.equals("\\{}")) dest.append("{}");
         int previousPointer = 0;
         for (int pointer = msg.indexOf("{}"), paramIndex = 0;
              pointer < msg.length() && pointer != -1;
              pointer = msg.indexOf("{}", previousPointer)) {
-            if (paramIndex == paramCount) return sb.append(msg, previousPointer, msg.length()).toString();
+            if (paramIndex == paramCount) dest.append(msg, previousPointer, msg.length());
             if (msg.charAt(pointer - 1) == '\\') {
-                sb.append(msg, previousPointer, pointer - 1);
-                if (msg.charAt(pointer - 2) == '\\') sb.append(params[paramIndex++]);
-                else sb.append('{').append('}');
+                dest.append(msg, previousPointer, pointer - 1);
+                if (msg.charAt(pointer - 2) == '\\') dest.append(params[paramIndex++]);
+                else dest.append("{}");
             } else {
-                sb.append(msg, previousPointer, pointer);
-                sb.append(params[paramIndex++]);
+                dest.append(msg, previousPointer, pointer).append(params[paramIndex++]);
             }
             previousPointer = pointer + 2;
         }
-        sb.append(msg, previousPointer, msg.length());
-        return sb.toString();
+        dest.append(msg, previousPointer, msg.length());
     }
 }

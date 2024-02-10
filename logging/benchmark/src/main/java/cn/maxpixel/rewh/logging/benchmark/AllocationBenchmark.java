@@ -1,4 +1,4 @@
-package cn.maxpixel.rewh.logging.test.benchmark;
+package cn.maxpixel.rewh.logging.benchmark;
 
 import cn.maxpixel.rewh.logging.Level;
 import org.openjdk.jmh.annotations.*;
