@@ -88,8 +88,12 @@ public final class Config {
         return CONFIG;
     }
 
-    public static Logger getConfig(String name) {// TODO: hierarchy
-        return CONFIG.loggers.getOrDefault(name, CONFIG.loggers.get("root"));
+    public static Logger getConfig(String name) {
+        Logger config = CONFIG.loggers.get(name);
+        if (config != null) return config;
+        String parent = getParent(name);
+        if (parent != null) return getConfig(parent);
+        return CONFIG.loggers.get("root");
     }
 
     public static void reload() {
@@ -116,6 +120,11 @@ public final class Config {
             }
         }
         return new Config();
+    }
+
+    private static String getParent(String name) {
+        int lastDot = name.lastIndexOf('.');
+        return lastDot < 0 ? null : name.substring(0, lastDot);
     }
 
     public static final class Logger {
