@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public final class Level implements Comparable<Level> {
-    public static final Level OFF = new Level("OFF", (short) -1);
+    public static final Level ALL = new Level("ALL", (short) -1);
 
     public static final Level TRACE = new Level("TRACE", (short) 1_0000);
 
@@ -25,9 +25,9 @@ public final class Level implements Comparable<Level> {
 
     public static final Level FATAL = new Level("FATAL", (short) 2_0000);
 
-    public static final Level ALL = new Level("ALL", (short) 3_0000);
+    public static final Level OFF = new Level("OFF", (short) 3_0000);
 
-    private static final Level[] PRE_DEFINED = new Level[] {OFF, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, ALL};
+    private static final Level[] PRE_DEFINED = new Level[] {ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF};
 
     public static Level[] getPreDefinedLevels() {
         Level[] levels = new Level[PRE_DEFINED.length];

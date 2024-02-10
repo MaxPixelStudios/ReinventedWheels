@@ -8,20 +8,19 @@ import cn.maxpixel.rewh.logging.util.CallerFinder;
 import cn.maxpixel.rewh.logging.util.Reusable;
 
 import java.io.IOException;
-import java.time.Clock;
 import java.time.ZoneId;
 import java.util.Objects;
 
 public final class Logger {
     public static final StackTraceElement UNKNOWN = new StackTraceElement("Unknown Class", "Unknown Method", null, 0);
     public static final ZoneId ZONE = ZoneId.systemDefault();
-    /*
-     * Some notes:
-     * https://github.com/openjdk/jdk/commit/6c838c568c2c99145fd0ae8059de2b2865b65863
-     * Since the introduction of java.time.InstantSource in jdk 17,
-     * Instant.now() calls no longer create Clock instances
-     */
-    public static final Clock CLOCK = Clock.systemUTC();
+//    /*
+//     * Some notes:
+//     * https://github.com/openjdk/jdk/commit/6c838c568c2c99145fd0ae8059de2b2865b65863
+//     * Since the introduction of java.time.InstantSource in jdk 17,
+//     * Instant.now() calls no longer create Clock instances
+//     */
+//    public static final Clock CLOCK = Clock.systemUTC();
     private static final String FQCN = Logger.class.getTypeName();
     public final String name;
     private Config.Logger config;
