@@ -55,7 +55,7 @@
 
 	<modules>
 		<module>logging</module>
-        <module>utils</module>
+<!--        <module>utils</module>--><!-- TODO -->
 <!--		<module>time-formatter</module>--><!-- TODO -->
 <!--		<module>jailbreak</module>--><!-- TODO -->
 	</modules>
