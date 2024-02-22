@@ -10,6 +10,7 @@ import cn.maxpixel.rewh.logging.util.Reusable;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public final class Logger {
     public static final StackTraceElement UNKNOWN = new StackTraceElement("Unknown Class", "Unknown Method", null, 0);
@@ -74,6 +75,10 @@ public final class Logger {
 
     public void log(Level level, String msg) {
         if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, mills(), msg));
+    }
+
+    public void log(Level level, Supplier<String> msg) {
+        if(isLoggable(level)) log(MessageFactory.get().create(null, fetchCaller(), level, mills(), msg.get()));
     }
 
     public void log(Level level, String msg, Object arg0) {
@@ -146,6 +151,10 @@ public final class Logger {
         log(Level.TRACE, msg);
     }
 
+    public void trace(Supplier<String> msg) {
+        log(Level.TRACE, msg);
+    }
+
     public void trace(String msg, Object arg0) {
         log(Level.TRACE, msg, arg0);
     }
@@ -211,6 +220,10 @@ public final class Logger {
     }
 
     public void debug(String msg) {
+        log(Level.DEBUG, msg);
+    }
+
+    public void debug(Supplier<String> msg) {
         log(Level.DEBUG, msg);
     }
 
@@ -282,6 +295,10 @@ public final class Logger {
         log(Level.INFO, msg);
     }
 
+    public void info(Supplier<String> msg) {
+        log(Level.INFO, msg);
+    }
+
     public void info(String msg, Object arg0) {
         log(Level.INFO, msg, arg0);
     }
@@ -347,6 +364,10 @@ public final class Logger {
     }
 
     public void warn(String msg) {
+        log(Level.WARN, msg);
+    }
+
+    public void warn(Supplier<String> msg) {
         log(Level.WARN, msg);
     }
 
@@ -418,6 +439,10 @@ public final class Logger {
         log(Level.ERROR, msg);
     }
 
+    public void error(Supplier<String> msg) {
+        log(Level.ERROR, msg);
+    }
+
     public void error(String msg, Object arg0) {
         log(Level.ERROR, msg, arg0);
     }
@@ -483,6 +508,10 @@ public final class Logger {
     }
 
     public void fatal(String msg) {
+        log(Level.FATAL, msg);
+    }
+
+    public void fatal(Supplier<String> msg) {
         log(Level.FATAL, msg);
     }
 

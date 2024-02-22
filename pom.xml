@@ -47,7 +47,12 @@
 		<url>https://github.com/MaxPixelStudios/ReinventedWheels/issues</url>
 	</issueManagement>
 
-<!--	<distributionManagement></distributionManagement>--><!--TODO-->
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<url>https://maven.pkg.github.com/MaxPixelStudios/ReinventedWheels</url>
+		</repository>
+	</distributionManagement>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -222,7 +227,7 @@
 				<configuration>
 					<rules>
 						<requireJavaVersion>
-							<version>[8]</version>
+							<version>[8,9)</version>
 							<message>${project.name} requires Java 8 to execute the build</message>
 						</requireJavaVersion>
 					</rules>
