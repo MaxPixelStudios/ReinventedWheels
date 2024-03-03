@@ -9,7 +9,7 @@ public class CallerFinder {
 
     public static StackTraceElement findCaller(String name) {
         return WALKER.walk(stacks -> {
-            Iterator<StackWalker.StackFrame> it = stacks.dropWhile(sf -> sf.getClassName().equals(name)).iterator();
+            Iterator<StackWalker.StackFrame> it = stacks.dropWhile(sf -> !sf.getClassName().equals(name)).iterator();
             while (it.hasNext()) {
                 StackWalker.StackFrame stack = it.next();
                 if (!stack.getClassName().equals(name)) {

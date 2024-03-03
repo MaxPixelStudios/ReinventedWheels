@@ -76,6 +76,7 @@ public final class Config {
         config.loggers.forEach((k, v) -> map.put(k, new Logger(v)));
         this.loggers = map;
         this.publishers = config.publishers.clone();
+        this.messageFactory = config.messageFactory;
     }
 
     public static void set(Config config) {

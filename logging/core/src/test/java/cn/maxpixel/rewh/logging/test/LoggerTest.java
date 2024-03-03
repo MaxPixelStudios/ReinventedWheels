@@ -3,22 +3,27 @@ package cn.maxpixel.rewh.logging.test;
 import cn.maxpixel.rewh.logging.LogManager;
 import cn.maxpixel.rewh.logging.Logger;
 import cn.maxpixel.rewh.logging.Marker;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-public class LoggerTest {
-    public void setUp() {
+class LoggerTest {
+    @BeforeAll
+    static void setup() {
 //        System.setProperty("rewh.logging.colorful", "false");
         Marker marker1 = LogManager.getMarker("Marker1");
         LogManager.getMarker("Marker2", marker1);
         LogManager.getLogger();
     }
 
-    public void testMarker() {
+    @Test
+    void testMarker() {
         Marker marker1 = LogManager.getMarker("Marker1");
         Marker marker2 = LogManager.getMarker("Marker2");
         assert marker2.isChildOf(marker1) : marker1 + "\n" + marker2;
     }
 
-    public void testLogger() {
+    @Test
+    void testLogger() {
         Logger logger = LogManager.getLogger();
         logger.info("Plain message");
         logger.info("Plain message with one arg \"{}\"", "arg0");

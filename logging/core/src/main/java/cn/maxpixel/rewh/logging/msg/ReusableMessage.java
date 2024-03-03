@@ -96,6 +96,7 @@ public final class ReusableMessage implements Message, Reusable {
     public void ready() {
         this.argLength = -1;
         this.arguments = null;
+        this.throwable = null;
         this.didFormat = false;
         this.ready = true;
     }

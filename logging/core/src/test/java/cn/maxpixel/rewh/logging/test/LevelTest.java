@@ -1,28 +1,15 @@
 package cn.maxpixel.rewh.logging.test;
 
 import cn.maxpixel.rewh.logging.Level;
+import org.junit.jupiter.api.Test;
 
-public class LevelTest {
-    public void testConstructor() {
-        try {
-            new Level("TEST", (short) -2);
-            assert false;
-        } catch (IllegalArgumentException e) {
-            assert true;
-        }
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-        try {
-            new Level("TEST", (short) 30001);
-            assert false;
-        } catch (IllegalArgumentException e) {
-            assert true;
-        }
-
-        try {
-            new Level(null, (short) 5000);
-            assert false;
-        } catch (NullPointerException e) {
-            assert true;
-        }
+class LevelTest {
+    @Test
+    void testConstructor() {
+        assertThrows(IllegalArgumentException.class, () -> new Level("TEST", (short) -2));
+        assertThrows(IllegalArgumentException.class, () -> new Level("TEST", (short) 30001));
+        assertThrows(NullPointerException.class, () -> new Level(null, (short) 5000));
     }
 }

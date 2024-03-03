@@ -1,9 +1,13 @@
 package cn.maxpixel.rewh.logging.test;
 
 import cn.maxpixel.rewh.logging.util.CallerFinder;
+import org.junit.jupiter.api.Test;
 
-public class CallerTest {
-    public void testFindCaller() {
-        assert CallerFinder.findCaller(getClass().getTypeName()) != null;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class CallerTest {
+    @Test
+    void testFindCaller() {
+        assertNotNull(CallerFinder.findCaller(getClass().getName()));
     }
 }
