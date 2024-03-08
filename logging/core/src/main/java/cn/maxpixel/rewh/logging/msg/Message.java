@@ -41,7 +41,7 @@ public interface Message {
                  pointer < msg.length() && pointer != -1;
                  pointer = msg.indexOf("{}", previousPointer)) {
                 if (paramIndex == paramCount) dest.append(msg, previousPointer, msg.length());
-                if (msg.charAt(pointer - 1) == '\\') {
+                if (pointer > 0 && msg.charAt(pointer - 1) == '\\') {
                     dest.append(msg, previousPointer, pointer - 1);
                     if (msg.charAt(pointer - 2) == '\\') dest.append(unwrapSupplier(params[paramIndex++]));
                     else dest.append("{}");
