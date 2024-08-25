@@ -4,7 +4,7 @@
 
 	<groupId>cn.maxpixel.rewh</groupId>
 	<artifactId>parent</artifactId>
-	<version>0.1</version>
+	<version>0.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>Reinvented Wheels</name>
@@ -42,7 +42,7 @@
 
 	<scm>
 		<developerConnection>scm:git:https://github.com/MaxPixelStudios/ReinventedWheels.git</developerConnection>
-	  <tag>v0.1</tag>
+	  <tag>HEAD</tag>
   </scm>
 
 	<issueManagement>
