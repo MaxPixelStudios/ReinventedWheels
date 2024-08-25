@@ -57,7 +57,9 @@ public final class LogManager {
      * @return The logger
      */
     public static Logger getLogger() {
-        return getLogger(CallerFinder.findCaller(FQCN).getClassName());
+        String caller = CallerFinder.findCaller(FQCN).getClassName();
+        int lastDot = caller.lastIndexOf('.');
+        return getLogger(lastDot >= 0 ? caller.substring(lastDot + 1) : caller);
     }
 
     /**
