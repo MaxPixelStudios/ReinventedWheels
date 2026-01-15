@@ -11,7 +11,7 @@ public final class ReusableMessageFactory extends MessageFactory {
 
     private ReusableMessage getMessage(Marker marker, StackTraceElement caller, Level level, long timestamp, String message) {
         ReusableMessage msg = MSG_HOLDER.get();
-        if(!msg.ready) msg = new ReusableMessage();// Why this isn't ready?
+        if (!msg.ready) msg = new ReusableMessage();// Why this isn't ready?
         return msg.init(marker, caller, level, timestamp, message);
     }
 

@@ -7,7 +7,6 @@ import cn.maxpixel.rewh.logging.msg.publisher.OutputStreamMessagePublisher;
 import cn.maxpixel.rewh.logging.util.Formatter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.InstanceCreator;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.annotations.Since;
@@ -22,18 +21,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
 
 public final class Config {
     public static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(Map.class, (InstanceCreator<Map<?, ?>>) type -> new Object2ObjectOpenHashMap<>())
             .registerTypeAdapter(Level.class, new Level.Adapter())
             .registerTypeAdapter(Formatter.class, new Formatter.Adapter())
             .registerTypeAdapter(Formatter.Color.class, new Formatter.Color.Adapter())
             .registerTypeAdapter(MessagePublisher.class, new MessagePublisher.Adapter())
             .excludeFieldsWithoutExposeAnnotation()
             .setPrettyPrinting()
-            .setVersion(0.1)
+            .setVersion(0.2)
             .create();
     public static final boolean JANSI_INSTALLED;
     public static final boolean COLORFUL;
@@ -56,7 +53,7 @@ public final class Config {
 
     @Since(0.1)
     @Expose
-    public Map<String, Logger> loggers = new Object2ObjectOpenHashMap<>();
+    public Object2ObjectOpenHashMap<String, Logger> loggers = new Object2ObjectOpenHashMap<>();
 
     @Since(0.1)
     @Expose
