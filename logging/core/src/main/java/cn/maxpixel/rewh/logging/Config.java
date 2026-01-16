@@ -10,7 +10,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.annotations.Since;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.fusesource.jansi.Ansi;
 
 import java.io.BufferedReader;
@@ -70,7 +72,11 @@ public final class Config {
 
     public Config(Config config) {
         Object2ObjectOpenHashMap<String, Logger> map = new Object2ObjectOpenHashMap<>(config.loggers.size());
-        config.loggers.forEach((k, v) -> map.put(k, new Logger(v)));
+        ObjectIterator<Object2ObjectMap.Entry<String, Logger>> it = config.loggers.object2ObjectEntrySet().fastIterator();
+        while (it.hasNext()) {
+            Object2ObjectMap.Entry<String, Logger> e = it.next();
+            map.put(e.getKey(), new Logger(e.getValue()));
+        }
         this.loggers = map;
         this.publishers = config.publishers.clone();
         this.messageFactory = config.messageFactory;

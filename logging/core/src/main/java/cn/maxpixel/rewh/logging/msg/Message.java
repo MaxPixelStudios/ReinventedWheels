@@ -38,7 +38,7 @@ public interface Message {
         } else {
             int previousPointer = 0;
             for (int pointer = msg.indexOf("{}"), paramIndex = 0;
-                 pointer < msg.length() && pointer != -1;
+                 pointer != -1;
                  pointer = msg.indexOf("{}", previousPointer)) {
                 if (paramIndex == paramCount) dest.append(msg, previousPointer, msg.length());
                 if (pointer > 0 && msg.charAt(pointer - 1) == '\\') {

@@ -53,13 +53,11 @@ public final class LogManager {
     }
 
     /**
-     * Get the logger with the name of the caller class name. Will create one if the logger doesn't exist
+     * Get the logger with the name of the caller's fully qualified class name. Will create one if the logger doesn't exist
      * @return The logger
      */
     public static Logger getLogger() {
-        String caller = CallerFinder.findCaller(FQCN).getClassName();
-        int lastDot = caller.lastIndexOf('.');
-        return getLogger(lastDot >= 0 ? caller.substring(lastDot + 1) : caller);
+        return getLogger(CallerFinder.findCaller(FQCN).getClassName());
     }
 
     /**
